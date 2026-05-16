@@ -47,7 +47,7 @@ XTOM_MIRROR_BASE=https://mirrors.xtom.jp sudo ./setup.sh
 - 可选安装 Caddy。
 - 可选安装 FFmpeg。
 - 可选安装 Realm 转发管理脚本。
-- 安装 Ookla Speedtest CLI。
+- 从 Ookla 官方二进制包安装 Speedtest CLI 到 `/usr/local/bin/speedtest`。
 - 执行 Nxtrace 安装脚本。
 - 安装 `tcping` 静态二进制。
 - 执行结束后询问是否重启系统。

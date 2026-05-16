@@ -832,23 +832,54 @@ install_realm() {
 }
 
 install_speedtest() {
-  local script_url=""
+  local ookla_arch=""
+  local temp_dir="/tmp/ookla-speedtest-install"
+  local archive_url=""
 
-  if [[ "$PKG_MGR" == "apt" ]]; then
-    script_url="https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh"
-  else
-    script_url="https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.rpm.sh"
-  fi
+  case "$ARCH_GENERIC" in
+    amd64)
+      ookla_arch="x86_64"
+      ;;
+    arm64)
+      ookla_arch="aarch64"
+      ;;
+    *)
+      warn "当前架构 ${ARCH_GENERIC} 未配置 Ookla Speedtest CLI 二进制安装包，跳过。"
+      return 1
+      ;;
+  esac
 
-  if ! curl -fsSL "$script_url" | bash; then
-    warn "Speedtest CLI 仓库配置失败。"
+  archive_url="https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-linux-${ookla_arch}.tgz"
+  rm -rf "$temp_dir"
+  mkdir -p "$temp_dir"
+
+  if ! wget "$archive_url" -O "${temp_dir}/speedtest.tgz"; then
+    warn "Ookla Speedtest CLI 下载失败。"
+    rm -rf "$temp_dir"
     return 1
   fi
 
-  if pkg_install speedtest; then
-    info "Speedtest CLI 安装成功。"
+  if ! tar -xzf "${temp_dir}/speedtest.tgz" -C "$temp_dir"; then
+    warn "Ookla Speedtest CLI 解压失败。"
+    rm -rf "$temp_dir"
+    return 1
+  fi
+
+  if [[ ! -f "${temp_dir}/speedtest" ]]; then
+    warn "未在压缩包中找到 speedtest 可执行文件。"
+    rm -rf "$temp_dir"
+    return 1
+  fi
+
+  install -m 0755 "${temp_dir}/speedtest" /usr/local/bin/speedtest
+  rm -rf "$temp_dir"
+  hash -r 2>/dev/null || true
+
+  if command_exists speedtest; then
+    info "Speedtest CLI 安装成功: $(speedtest --version 2>&1 | head -n1)"
+    info "Speedtest CLI 路径: $(command -v speedtest)"
   else
-    warn "Speedtest CLI 安装失败。"
+    warn "Speedtest CLI 安装后验证失败。"
     return 1
   fi
 }
