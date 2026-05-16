@@ -563,6 +563,8 @@ EOF
 
 install_uv_python() {
   local uv_bin="/usr/local/bin/uv"
+  local python_install_dir="/opt/uv/python"
+  local python_path=""
   local profile_file="/etc/profile.d/uv.sh"
 
   if curl -LsSf https://astral.sh/uv/install.sh | UV_UNMANAGED_INSTALL=/usr/local/bin sh; then
@@ -583,12 +585,26 @@ EOF
   chmod +x "$profile_file"
   export PATH="/usr/local/bin:${PATH}"
 
-  if "$uv_bin" python install --default 3.13; then
-    info "Python 3.13 已通过 uv 安装并设置为默认版本。"
+  mkdir -p "$python_install_dir"
+  chmod 755 /opt/uv "$python_install_dir"
+
+  if UV_PYTHON_INSTALL_DIR="$python_install_dir" "$uv_bin" python install 3.13; then
+    info "Python 3.13 已通过 uv 安装到 ${python_install_dir}。"
   else
-    warn "Python 3.13 安装或默认版本设置失败。"
+    warn "Python 3.13 安装失败。"
     return 1
   fi
+
+  python_path="$(UV_PYTHON_INSTALL_DIR="$python_install_dir" "$uv_bin" python find 3.13 2>/dev/null || true)"
+  if [[ -z "$python_path" || ! -x "$python_path" ]]; then
+    warn "无法定位 uv 安装的 Python 3.13。"
+    return 1
+  fi
+
+  ln -sfn "$python_path" /usr/local/bin/python3.13
+  ln -sfn "$python_path" /usr/local/bin/python3
+  ln -sfn "$python_path" /usr/local/bin/python
+  info "已将 Python 3.13 设置为 /usr/local/bin 下的默认 python/python3。"
 
   if command_exists python3; then
     info "当前 python3: $(python3 --version 2>&1)"
