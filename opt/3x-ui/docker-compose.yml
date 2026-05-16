@@ -1,0 +1,14 @@
+services:
+  3x-ui:
+    image: ghcr.io/mhsanaei/3x-ui:latest # 使用最新的 3X-UI 镜像
+    container_name: 3x-ui # 容器名称
+    restart: unless-stopped # 除非手动停止，否则始终重启容器
+    volumes:
+      - ./3x-ui-data:/etc/x-ui/ # 映射数据卷，持久化配置文件和数据
+      # 宿主机路径 ./3x-ui-data 会在当前 docker-compose.yml 文件所在目录创建
+    environment:
+      # 可以根据需要添加环境变量，例如设置时区
+      - TZ=Asia/Shanghai
+    network_mode: host
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
