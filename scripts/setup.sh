@@ -197,6 +197,69 @@ select_nearest_xtom_mirror() {
   fi
 }
 
+host_from_url() {
+  local url="$1"
+  url="${url#*://}"
+  echo "${url%%/*}"
+}
+
+can_resolve_host() {
+  local host="$1"
+
+  if command_exists getent && getent hosts "$host" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if command_exists curl && curl -sS --connect-timeout 3 --max-time 6 -o /dev/null "https://${host}/" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  return 1
+}
+
+configure_temporary_resolver() {
+  local backup_file="/etc/resolv.conf.backup-before-vps-setup"
+
+  if command_exists chattr; then
+    chattr -i /etc/resolv.conf >/dev/null 2>&1 || true
+  fi
+
+  if [[ -e /etc/resolv.conf && ! -e "$backup_file" ]]; then
+    cp -a /etc/resolv.conf "$backup_file" 2>/dev/null || true
+  fi
+
+  cat > /etc/resolv.conf <<EOF
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+nameserver 223.5.5.5
+options timeout:2 attempts:3
+EOF
+
+  info "已写入临时公共 DNS，用于完成软件源更新。"
+}
+
+ensure_dns_for_package_sources() {
+  local mirror_host
+
+  mirror_host="$(host_from_url "$XTOM_MIRROR_BASE")"
+
+  if can_resolve_host "$mirror_host"; then
+    info "DNS 解析正常: ${mirror_host}"
+    return 0
+  fi
+
+  warn "当前 DNS 无法解析 ${mirror_host}，尝试写入临时公共 DNS。"
+  configure_temporary_resolver
+
+  if can_resolve_host "$mirror_host"; then
+    info "临时 DNS 已恢复 ${mirror_host} 解析。"
+    return 0
+  fi
+
+  warn "写入临时 DNS 后仍无法解析 ${mirror_host}，后续软件源更新可能失败。"
+  return 1
+}
+
 backup_apt_sources() {
   local backup_dir="/etc/apt/sources.list.d/backup-before-xtom"
 
@@ -815,6 +878,7 @@ main() {
 
   next_step "配置 xTom 软件源并添加 backports"
   configure_xtom_sources
+  ensure_dns_for_package_sources
 
   next_step "更新系统并安装基础工具"
   install_base_packages
