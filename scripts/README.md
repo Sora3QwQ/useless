@@ -9,9 +9,7 @@
 建议在全新的 VPS 上以 `root` 权限运行：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Sora3QwQ/useless/main/scripts/setup.sh -o setup.sh
-chmod +x setup.sh
-sudo ./setup.sh
+curl -fsSL https://raw.githubusercontent.com/Sora3QwQ/useless/main/scripts/setup.sh -o setup.sh && chmod +x setup.sh && sudo ./setup.sh
 ```
 
 也可以手动指定 xTom 镜像节点：
