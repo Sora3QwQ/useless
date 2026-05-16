@@ -604,13 +604,16 @@ EOF
   ln -sfn "$python_path" /usr/local/bin/python3.13
   ln -sfn "$python_path" /usr/local/bin/python3
   ln -sfn "$python_path" /usr/local/bin/python
-  info "已将 Python 3.13 设置为 /usr/local/bin 下的默认 python/python3。"
+  hash -r 2>/dev/null || true
+  info "已将 Python 3.13 设置为系统默认命令解析中的 python/python3。"
 
   if command_exists python3; then
+    info "当前 python3 路径: $(command -v python3)"
     info "当前 python3: $(python3 --version 2>&1)"
   fi
 
   if command_exists python; then
+    info "当前 python 路径: $(command -v python)"
     info "当前 python: $(python --version 2>&1)"
   fi
 }
