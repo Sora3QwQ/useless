@@ -1,0 +1,13 @@
+services:
+
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: ghcr.io/nicholas-fedor/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      # <<<<<<<<<<<<<<< 将这里的 :ro 移除！ >>>>>>>>>>>>>>>
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --label-enable --cleanup
