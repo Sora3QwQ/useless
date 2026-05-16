@@ -235,7 +235,7 @@ nameserver 223.5.5.5
 options timeout:2 attempts:3
 EOF
 
-  info "已写入临时公共 DNS，用于完成软件源更新。"
+  info "已写入临时公共 DNS，用于完成软件源更新；此阶段不会锁定 /etc/resolv.conf。"
 }
 
 ensure_dns_for_package_sources() {
@@ -620,6 +620,10 @@ ensure_docker_compose() {
 }
 
 configure_resolv_conf_for_smartdns() {
+  if command_exists chattr; then
+    chattr -i /etc/resolv.conf >/dev/null 2>&1 || true
+  fi
+
   cat > /etc/resolv.conf <<EOF
 nameserver 127.0.0.1
 options timeout:2 attempts:3
