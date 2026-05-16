@@ -500,6 +500,13 @@ EOF
 }
 
 install_xanmod() {
+  local xanmod_package=""
+  local package
+  local candidates=(
+    linux-xanmod-x64v3
+    linux-xanmod-lts-x64v3
+  )
+
   if [[ "$PKG_MGR" != "apt" ]]; then
     info "Fedora 不适用 XanMod APT 仓库，跳过。"
     return 0
@@ -527,12 +534,31 @@ install_xanmod() {
 deb [signed-by=/etc/apt/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org ${OS_CODENAME} main
 EOF
 
-  if ! pkg_update || ! pkg_install linux-xanmod-x64v3; then
+  if ! pkg_update; then
+    warn "XanMod 源更新失败。"
+    return 1
+  fi
+
+  for package in "${candidates[@]}"; do
+    if apt-cache policy "$package" | awk '/Candidate:/ && $2 != "(none)" {found=1} END {exit !found}'; then
+      xanmod_package="$package"
+      break
+    fi
+  done
+
+  if [[ -z "$xanmod_package" ]]; then
+    warn "XanMod 仓库中未找到 linux-xanmod-x64v3 或 linux-xanmod-lts-x64v3，跳过内核安装。"
+    return 1
+  fi
+
+  info "选择安装 XanMod 内核包: ${xanmod_package}"
+
+  if ! pkg_install "$xanmod_package"; then
     warn "XanMod 内核安装失败。"
     return 1
   fi
 
-  info "XanMod 内核安装成功。"
+  info "XanMod 内核安装成功: ${xanmod_package}"
 }
 
 install_uv_python() {
